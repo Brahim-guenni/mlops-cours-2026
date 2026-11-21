@@ -1,4 +1,3 @@
-
 """Launch 22 training runs in the scoring MLflow experiment."""
 
 import os
@@ -9,7 +8,6 @@ from itertools import product
 CONFIGS = [
     # Naive baseline
     ("dummy", []),
-
     # Logistic Regression: 4 x 2 = 8 runs
     *[
         ("logistic_regression", ["--C", str(c), "--class_weight", w])
@@ -18,7 +16,6 @@ CONFIGS = [
             ["none", "balanced"],
         )
     ],
-
     # Random Forest: 3 x 3 = 9 runs
     *[
         ("random_forest", ["--n_estimators", str(n), "--max_depth", str(d)])
@@ -27,7 +24,6 @@ CONFIGS = [
             [4, 8, "none"],
         )
     ],
-
     # Gradient Boosting: 2 x 2 = 4 runs
     *[
         ("gradient_boosting", ["--n_estimators", str(n), "--max_depth", str(d)])

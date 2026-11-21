@@ -63,9 +63,7 @@ SKOPS_TRUSTED_TYPES = ["numpy.dtype", "sklearn.tree._tree.Tree"]
 
 # Dépendances nécessaires pour recharger le modèle (images de serving des labs 4-5).
 # Sans cette liste, MLflow 3 recopie tout uv.lock (près de 300 paquets du cours).
-PIP_REQUIREMENTS = [
-    f"{p}=={version(p)}" for p in ("scikit-learn", "skops", "pandas", "numpy")
-]
+PIP_REQUIREMENTS = [f"{p}=={version(p)}" for p in ("scikit-learn", "skops", "pandas", "numpy")]
 
 
 def none_or(cast):
@@ -188,9 +186,7 @@ def main() -> None:
             metadata={"mlflow_run_id": run.info.run_id, "decision_threshold": threshold},
         )
 
-        summary = ", ".join(
-            f"{k}={v:.3f}" for k, v in metrics.items() if k != "business_cost"
-        )
+        summary = ", ".join(f"{k}={v:.3f}" for k, v in metrics.items() if k != "business_cost")
         cost = metrics["business_cost"]
         print(f"{run_name}: seuil={threshold:.3f}, {summary}, business_cost={cost:.0f}")
         print(f"run_id : {run.info.run_id}")

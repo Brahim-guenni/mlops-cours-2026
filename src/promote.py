@@ -1,12 +1,11 @@
-
 # Fichier : src/promote.py
 """Enregistre un run dans le Model Registry et le promeut avec des alias MLflow.
 
-  1. choisit le meilleur run de l'expérience « scoring » selon metrics.primary
-     (dataset.yaml) — ou le run donné par --run-id, ou le meilleur parmi --filter ;
-  2. l'enregistre comme nouvelle version de « scoring-model » (sauf s'il l'est déjà) ;
-  3. pose l'alias @challenger sur cette version ;
-  4. pose l'alias @champion SEULEMENT si la métrique atteint metrics.promotion_threshold.
+1. choisit le meilleur run de l'expérience « scoring » selon metrics.primary
+   (dataset.yaml) — ou le run donné par --run-id, ou le meilleur parmi --filter ;
+2. l'enregistre comme nouvelle version de « scoring-model » (sauf s'il l'est déjà) ;
+3. pose l'alias @challenger sur cette version ;
+4. pose l'alias @champion SEULEMENT si la métrique atteint metrics.promotion_threshold.
 """
 
 import argparse
@@ -53,13 +52,9 @@ def find_run(
 
     exp = client.get_experiment_by_name(EXPERIMENT)
     if exp is None:
-        raise SystemExit(
-            f"Expérience « {EXPERIMENT} » introuvable : lancez d'abord src.train"
-        )
+        raise SystemExit(f"Expérience « {EXPERIMENT} » introuvable : lancez d'abord src.train")
 
-    filters = ["attributes.status = 'FINISHED'"] + (
-        [extra_filter] if extra_filter else []
-    )
+    filters = ["attributes.status = 'FINISHED'"] + ([extra_filter] if extra_filter else [])
 
     runs = client.search_runs(
         [exp.experiment_id],
@@ -72,10 +67,7 @@ def find_run(
     )
 
     if not runs or metric not in runs[0].data.metrics:
-        raise SystemExit(
-            f"Aucun run avec la métrique « {metric} » "
-            f"({' and '.join(filters)})"
-        )
+        raise SystemExit(f"Aucun run avec la métrique « {metric} » ({' and '.join(filters)})")
 
     return runs[0]
 
@@ -88,13 +80,9 @@ def main() -> None:
     threshold = cfg.promotion_threshold
 
     if metric not in HIGHER_IS_BETTER:
-        raise SystemExit(
-            f"metrics.primary doit être l'une de {sorted(HIGHER_IS_BETTER)}"
-        )
+        raise SystemExit(f"metrics.primary doit être l'une de {sorted(HIGHER_IS_BETTER)}")
 
-    mlflow.set_tracking_uri(
-        os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-    )
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 
     client = MlflowClient()
 
@@ -108,18 +96,13 @@ def main() -> None:
 
     if existing:
         version = existing[0].version
-        print(
-            f"Run {run.info.run_name} déjà enregistré : version {version}"
-        )
+        print(f"Run {run.info.run_name} déjà enregistré : version {version}")
     else:
         # MLflow 3 : le modèle loggé par le run est un « LoggedModel »
         model_id = run.outputs.model_outputs[0].model_id
         mv = mlflow.register_model(f"models:/{model_id}", MODEL_NAME)
         version = mv.version
-        print(
-            f"Run {run.info.run_name} enregistré : "
-            f"{MODEL_NAME} version {version}"
-        )
+        print(f"Run {run.info.run_name} enregistré : {MODEL_NAME} version {version}")
 
     passed = score >= threshold
 
@@ -132,34 +115,19 @@ def main() -> None:
     for key, value in tags.items():
         client.set_model_version_tag(MODEL_NAME, version, key, value)
 
-    client.set_registered_model_alias(
-        MODEL_NAME, "challenger", version
-    )
-    print(
-        f"  @challenger -> version {version} "
-        f"({metric} = {score:.4f})"
-    )
+    client.set_registered_model_alias(MODEL_NAME, "challenger", version)
+    print(f"  @challenger -> version {version} ({metric} = {score:.4f})")
 
     if passed:
-        client.set_registered_model_alias(
-            MODEL_NAME, "champion", version
-        )
-        print(
-            f"  @champion   -> version {version} "
-            f"({metric} >= seuil {threshold})"
-        )
+        client.set_registered_model_alias(MODEL_NAME, "champion", version)
+        print(f"  @champion   -> version {version} ({metric} >= seuil {threshold})")
     else:
         try:
-            current = client.get_model_version_by_alias(
-                MODEL_NAME, "champion"
-            ).version
+            current = client.get_model_version_by_alias(MODEL_NAME, "champion").version
         except mlflow.exceptions.MlflowException:
             current = "aucun"
 
-        print(
-            f"  champion inchangé (version {current}) : "
-            f"{metric} < seuil {threshold}"
-        )
+        print(f"  champion inchangé (version {current}) : {metric} < seuil {threshold}")
 
 
 if __name__ == "__main__":
