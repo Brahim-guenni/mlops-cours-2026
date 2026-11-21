@@ -123,7 +123,7 @@ def compute_metrics(cfg: DatasetConfig, y_true, proba, threshold: float) -> dict
 
 def file_md5(path: str | Path) -> str:
     """Empreinte MD5 du fichier brut : la même que celle que DVC écrit dans dvc.lock."""
-    return hashlib.md5(Path(path).read_bytes()).hexdigest()
+    return hashlib.md5(Path(path).read_bytes(), usedforsecurity=False).hexdigest()
 
 
 def main() -> None:
