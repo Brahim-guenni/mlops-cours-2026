@@ -4,8 +4,9 @@
 # --- Stage 1 : builder ---
 FROM python:3.12-slim AS builder
 WORKDIR /build
-COPY packaging/requirements.txt .
-RUN pip install --no-cache-dir --target=/deps -r requirements.txt
+COPY packaging/requirements.lock .
+RUN pip install --no-cache-dir --only-binary=:all: --require-hashes \
+    --target=/deps -r requirements.lock
 
 # --- Stage 2 : runtime ---
 FROM python:3.12-slim AS runtime

@@ -100,7 +100,11 @@ def get_metadata():
     }
 
 
-@app.post("/predict", response_model=PredictResponse)
+@app.post(
+    "/predict",
+    response_model=PredictResponse,
+    responses={500: {"description": "Internal prediction error"}},
+)
 def predict(req: PredictRequest):
     try:
         proba = score([i.model_dump() for i in req.instances])
