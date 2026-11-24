@@ -1,0 +1,19 @@
+# Baseline image: intentionally uses a full Python image and a single stage.
+FROM python:3.12
+RUN groupadd --gid 10001 ml \
+    && useradd --uid 10001 --gid ml --no-create-home --shell /usr/sbin/nologin ml
+WORKDIR /app
+
+COPY dataset.yaml ./
+COPY src/__init__.py src/dataset_config.py src/
+COPY packaging/app/__init__.py packaging/app/serve.py packaging/app/
+COPY packaging/model/model.onnx packaging/model/metadata.json packaging/model/
+COPY packaging/requirements.lock packaging/
+
+RUN pip install --only-binary=:all: --require-hashes \
+    -r packaging/requirements.lock
+USER 10001:10001
+EXPOSE 8000
+
+CMD ["python", "-m", "uvicorn", "app.serve:app", "--app-dir", "packaging", \
+     "--host", "0.0.0.0", "--port", "8000"]
